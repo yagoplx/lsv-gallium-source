@@ -1,0 +1,12 @@
+#!/bin/bash
+# Part of yagoply's LSV-Gallium Utilities
+# Wrapper for restic's prune function
+
+set -a
+
+# set password here
+RESTIC_PASSWORD=""
+
+# prune old backup data
+mainRepo="/mnt/linux_store_hdd/restic"
+restic -r $mainRepo prune

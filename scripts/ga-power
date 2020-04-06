@@ -1,0 +1,25 @@
+#!/bin/bash
+# Enables high power mode or low power mode.
+# Part of yagoply's LSV-Gallium Utilities
+# Unused, and requires TLP
+
+echo "ga-power high disables power management."
+echo "ga-power low enables power management."
+
+if [ "$1" == "high" ]; then
+    echo "Disabling Powersave Mode"
+    sudo tlp ac
+    sudo ga-prio
+    sudo nvidia-smi -pl 30
+        clear
+    exit 0
+fi
+
+if [ "$1" == "low" ]; then
+    echo "Enabling Powersave Mode"
+    sudo tlp bat
+    sudo nvidia-smi -pl 25.5
+    sudo ga-prio
+        clear
+    exit 0
+fi

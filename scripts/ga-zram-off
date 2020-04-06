@@ -1,0 +1,15 @@
+# zram script for gallium
+# unstable
+# Part of yagoply's LSV-Gallium Utilities
+
+swapoff /dev/zram0 &
+swapoff /dev/zram1 &
+swapoff /dev/zram2 &
+swapoff /dev/zram3 &
+
+echo 1 > /sys/block/zram0/reset
+echo 1 > /sys/block/zram1/reset
+echo 1 > /sys/block/zram2/reset
+echo 1 > /sys/block/zram3/reset
+
+modprobe -r zram

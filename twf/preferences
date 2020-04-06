@@ -1,0 +1,86 @@
+#!/bin/bash
+#/* Copyright (C) 2018-2019 Fully Toasted <fully.toasted.community@gmail.com> - All Rights Reserved
+# *
+# * This file is part of Toasted Watchdog by Fully Toasted, Toasted Watchdog is Proprietary and Confidential.
+# * Unauthorized copying of this file, project, and associated files via any medium is strictly prohibited.
+# *
+# * Written by Fully Toasted.
+# */
+echo "loaded preferences file"
+set -a
+# Only change this if you know what you are doing.
+        cfgfile=$execdir"/preferences"
+        logfile=$execdir"/logFile"
+        lock=$execdir"/wlock" 
+        modfile=$execdir"/modules"
+
+# Set here something that will let TW identify the pack. The default is okay most of the time.
+  lookFor=$fpid"/runtime"
+
+# Is this watchdog running on a multi-watchdog server (false) or not (true)? Disables the checking for other watchdogs.
+# Careful to not have a million watchdogs open.
+  isSingleInstance="false"
+ 
+# If "true", the watchdog will enforce this configuration file. Usually you don't need to set this.
+ enforceCfg="false"
+# If "true", console will show an instructive warning.
+ showWarning="false"
+# If "true", the watchdog will use a spinner animation when applicable.
+ useSpinner="false"
+# If "true", the watchdog will use an algorithm to calculate timings. Makes startup a bit slower.
+ useThreadedCalculation="false"
+ 
+# if "true", watchdog -k will kill all watchdogs instead.
+# Will kill everything anyway if you append -f to watchdog -k, eg. watchdog -k -f
+# NOT IMPLEMENTED YET
+# killAllWatchdogs="false"
+
+# Will cacheLogins run a command on a new player
+ doCommandOnNewLogin="false"
+
+# Command cacheLogins will do on a new player
+ CommandOnNewLogin=""
+
+# How long grabWhitelist will sleep for before syncing the whitelist (in minutes).
+ whitelistTimeMins="2"
+
+# How long saveHandler will sleep for before doing a save and clean (in minutes).
+ saveHandlerTimeMins="60"
+
+# Whether or not the saveHandler will clean memory after a save.
+ doFullGC="true"
+
+# How long cacheLogins will sleep for before checking for a login (in seconds)
+ cacheTime="10"
+
+# How long sleepRestartScheduler will sleep for before checking for scheduled jobs (in seconds)
+ restartSleepTime="1000"
+
+# What message will AnnounceHandler append to its usual banter about staff? This can be blank.
+# expandAnnoucement; # <- ignore this
+# announcement="§d<healthd>§r Usados $usemem de $totalmem GBs §7|§r CPU: $loadnow%"
+
+# Delay for the additional annoucement (in seconds)
+ announcementDelay="12"
+
+# Name of the admin that protectAdmin will protect
+ adminName="yagoply"
+
+# Select which modules the watchdog is going to load when it starts
+
+        if [ "$isModLoadingPhase" == "true" ]; then
+        # Define which modules to load here
+        # format -> modulename ; for sequential execution
+        # format -> modulename & for parallel execution
+       echo "started isModuleLoadingPhase"
+
+#        serverRestartScheduler &
+       # saveHandler &
+        announceHandler &
+       # cacheLogins &
+        hardmode &
+        lastsnapbossd &
+	nolag &
+       echo "finished isModuleLoadingPhase" 
+       fi
+

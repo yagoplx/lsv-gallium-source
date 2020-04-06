@@ -1,0 +1,4 @@
+# Quick script to fix permissions after backup restoration
+# Part of yagoply's LSV-Gallium Utilities
+
+sudo chown mcs -Rv /home/mcs/snapServer/

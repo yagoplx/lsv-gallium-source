@@ -1,0 +1,16 @@
+#!/bin/bash
+# Iptables script for the Gallium Router. Probably doesn't do that much by itself.
+# Part of yagoply's LSV-Gallium Utilities
+
+# WAN = ppp0 with ip x.x.x.x
+# LAN = netw0 with ip x.x.x.x
+
+iptables --table nat --append POSTROUTING --out-interface ppp0 -j MASQUERADE
+
+iptables --table nat --append POSTROUTING --out-interface lo -j MASQUERADE
+
+iptables --append FORWARD --in-interface wlp4s0 -j ACCEPT
+
+iptables --append FORWARD --in-interface netw0 -j ACCEPT
+
+iptables --append FORWARD --in-interface netv0 -j ACCEPT

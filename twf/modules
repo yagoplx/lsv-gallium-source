@@ -1,0 +1,427 @@
+#!/bin/bash
+
+# Will be loaded ONCE in the start of the main loop
+# If you can't fit something you need here, look into editing the watchdog itself!
+# Functions must be referenced in watchdog.cfg to actually run.
+
+        . setup 2>/dev/null
+        set -a
+
+serverRestartScheduler(){
+loadVars;
+# Schedule a restart for 5am EDT
+echo "[INFO] serverRestartScheduler module running on "$shortPackID
+execdir=$(pwd)
+export execdir=$execdir
+while true; do
+#sleep $restartSleepTime
+atcheck=$(atq | wc -l)
+#if [ "$atcheck" -eq "0" ]; then
+if [ ! -f ".wdr" ]; then
+if [ ! -f $lock ]; then
+echo 'bash rebootscript' | at 0:00 -M
+echo 'bash rebootscript2' | at 12:00 -M
+#msgAppend="Scheduled a restart to 04:00 EDT/8:00 UTC."; broadcastInternal;
+#sleep 120
+#msgAppend="§d<lastsnap>§r Flushing saves to disk... §7This §7will §7lagar."; broadcastInternal;
+#command="save-all flush"; export command=$command; sendCommand;
+touch .wdr
+fi
+fi
+sleep 220
+#fi
+done
+}
+
+cacheLogins(){
+loadVars;
+echo "[INFO] cacheLogins module running on "$shortPackID
+        while true; do
+sleep $cacheTime
+nline=$(tail -n 12 /home/$user/$longPackID/serverfiles/logs/latest.log | grep -i "Sent config to"  -)
+nlineCount=$(echo "$nline" | wc -l)
+                if [ "$nlineCount" == "1" ]; then
+pGetPlayer=${nline%".'"}
+pGetPlayer=${pGetPlayer##*\'}
+checkIsCached=$(cat playerLoginCache | grep -i $pGetPlayer | wc -l)
+if [ ! "$checkIsCached" -gt 0 ]; then
+echo $pGetPlayer >> playerLoginCache
+        if [ "$doCommandOnNewLogin" == "true" ]; then
+export command=$commandOnNewLogin; command=$commandOnNewLogin; sendCommand ;
+        fi
+fi
+                fi
+        done
+}
+
+saveHandler(){
+loadVars;
+echo "[INFO] saveHandler module running on" $shortPackID
+saveHandlerTime=$((saveHandlerTimeMins * 60))
+while true; do
+msgAppend="§d<Save>§r Salvando mundo e limpando a RAM. §7Isso §7pode §7lagar."; broadcastInternal;
+: > /var/mail/$user # Clean mail
+command="save-all"; export command=$command; sendCommand;
+
+        if [ "$doFullGC" == "true" ]; then
+        command="pregen utils gc"; export command=$command; sendCommand;
+        echo "[INFO] saveHandler: Enabled GC mode."
+        fi
+        sleep $saveHandlerTime
+done
+}
+
+announceHandler(){
+sleep 2
+        source setup
+echo "[INFO] announceHandler module running on" $shortPackID
+while true; do
+set -a                     
+unset loadnow; unset memtotal; unset usemem; unset totalmem; unset usedstor; unset totalstor
+
+			usedstor=$(df --output=avail -h "/" | sed '1d;s/[^0-9]//g') # sp
+			usedstorb=$(df --output=avail -h "/mnt/linux_store_hdd" | sed '1d;s/[^0-9]//g') # bp
+		        sysload=$(cat /proc/loadavg | head -c 5) # sl				
+# ratings here
+pre_sl=$(cat /proc/loadavg | head -c 1);
+
+if [ "$pre_sl" -lt 3 ]; then
+	rating_sl="§2<OK>"
+elif [ "$pre_sl" -eq 3 ]; then
+	rating_sl="§2<OK>"
+elif [ "$pre_sl" -eq 4 ]; then
+	rating_sl="§6<Warning>"
+elif [ "$pre_sl" -gt 4 ]; then
+	rating_sl="§c§l<Overloaded>" 
+fi
+
+pre_sp=$usedstor
+
+if [ "pre_sp" -lt 60 ]; then
+	rating_sp="§6<Warning>"
+else
+	rating_sp="§2<OK>"
+fi
+
+pre_bp=$usedstorb
+
+if [ "pre_bp" -lt 30 ]; then
+        rating_bp="§6<Warning>"
+else
+        rating_bp="§2<OK>"
+fi
+		msgAppend="§9<Server Health> §2(Best) §2<Rating>"; broadcastInternal
+		#msgAppend="§9Memory, §3$meminfo"; broadcastInternal
+		msgAppend="§9System Load: §3$sysload§2(< 4.00) $rating_sl"; broadcastInternal
+		msgAppend="§9Backup Pool: §3$usedstorb §3GiB §9free §2(>30) $rating_bp"; broadcastInternal
+		msgAppend="§9Server Pool: §3$usedstor §3GiB §9free §2(>30) $rating_sp"; broadcastInternal	
+	#msgAppend="§cAlert: COVID-19 detected in server"; broadcastInternal
+
+sleep 1800
+done
+}
+
+lastsnapbossd(){
+# Handle the boss bar
+sleep 1
+while true; do
+#sleep 3600
+
+sleep 5
+if [ -f ".hardmode" ]; then
+command="bossbar set minecraft:1 color purple"; sendCommand
+command="bossbar set minecraft:1 style notched_6"; sendCommand         
+else
+command="bossbar set minecraft:1 color blue"; sendCommand
+command="bossbar set minecraft:1 style progress"; sendCommand         
+fi
+
+##command="bossbar set minecraft:1 visible true"; sendCommand
+command="bossbar set minecraft:1 players @a"; sendCommand
+
+
+
+command="bossbar set minecraft:1 name \"Lastsnap Vanilla\""; sendCommand
+sleep .3
+command="bossbar set minecraft:1 visible true"; sendCommand
+sleep 1.5
+command="bossbar set minecraft:1 value 2"; sendCommand
+sleep 1.5
+command="bossbar set minecraft:1 value 4"; sendCommand
+sleep 1.5
+command="bossbar set minecraft:1 name \"Thank you for playing today!\""; sendCommand
+command="bossbar set minecraft:1 value 6"; sendCommand
+sleep 1.5
+command="bossbar set minecraft:1 value 8"; sendCommand
+sleep 1.5
+command="bossbar set minecraft:1 value 10"; sendCommand
+sleep 1.5
+command="bossbar set minecraft:1 value 12"; sendCommand;
+sleep 1.5
+command="bossbar set minecraft:1 name \"Tab currently displays:\""; sendCommand;
+command="bossbar set minecraft:1 value 14"; sendCommand;
+sleep 1.5
+command="bossbar set minecraft:1 value 16"; sendCommand;
+sleep 1.5
+if [ ! -f ".hardmode" ]; then
+command="bossbar set minecraft:1 name \"Number of times you died\""; sendCommand;
+else
+command="bossbar set minecraft:1 name \"Your health bar to everyone\""; sendCommand;
+fi
+command="bossbar set minecraft:1 value 18"; sendCommand;
+sleep 1.5
+command="bossbar set minecraft:1 value 20"; sendCommand;
+sleep 1.5
+command="bossbar set minecraft:1 value 22"; sendCommand
+command="bossbar set minecraft:1 name \"The current render distance is:\""; sendCommand;
+sleep 1.5
+command="bossbar set minecraft:1 value 24"; sendCommand
+sleep 1.5
+command="bossbar set minecraft:1 value 26"; sendCommand
+command="bossbar set minecraft:1 name \"9 chunks\""; sendCommand;
+sleep 1.5
+command="bossbar set minecraft:1 value 28"; sendCommand
+sleep 1.5
+
+#command="bossbar set minecraft:1 value 50"; sendCommand
+command="bossbar set minecraft:1 name \"lastsnap.us.to\""; sendCommand;
+sleep 0.08
+command="bossbar set minecraft:1 color yellow"; sendCommand
+sleep 0.09
+command="bossbar set minecraft:1 color green"; sendCommand
+sleep 0.10
+command="bossbar set minecraft:1 color red"; sendCommand
+sleep 0.11
+command="bossbar set minecraft:1 color purple"; sendCommand
+sleep 0.12
+command="bossbar set minecraft:1 color blue"; sendCommand
+sleep 0.13
+command="bossbar set minecraft:1 color yellow"; sendCommand
+sleep 0.13
+command="bossbar set minecraft:1 color green"; sendCommand
+sleep 0.13
+command="bossbar set minecraft:1 color red"; sendCommand
+sleep 0.13
+command="bossbar set minecraft:1 value 0"; sendCommand
+sleep 0.08
+command="bossbar set minecraft:1 visible false"; sendCommand
+
+command="bossbar set minecraft:1 value 0"; sendCommand
+if [ "$n" = "2000" ]; then
+        n="3600"
+else
+	n="2000"
+fi
+
+sleep $n
+done
+}
+
+loader(){
+#Notices with bossbar
+#sleep 20
+while true; do
+#loadnow=$(echo $[100-$(vmstat 1 2|tail -1|awk '{print $15}')])
+ #                       memtotal=$(awk '/MemTotal/ { printf "%.3f \n", $2/1024/1024 }' /proc/meminfo)
+  #                      usemem=$(awk '/MemFree/ { printf "%.3f \n", $2/1024/1024 }' /proc/meminfo)
+   #                     usemem=$(bc <<< "scale=2; $memtotal - $usemem");
+    #                    totalmem=$(bc <<< "scale=2; $memtotal * 1" );
+     #   sleep $announcementDelay
+ #announcement="§<Server>§r Usados $usemem de $totalmem GBs §7|§r CPU: $loadnow% §7|§r Yago's RLCraft"
+#command="bossbar set "; sendCommand
+#command="bossbar set minecraft:pregen name \"§6 Chunk Pregenerator: Running\""; sendCommand
+
+command="bossbar set minecraft:pregen value 81"; sendCommand
+#sleep 0.1
+command="bossbar set minecraft:pregen value 91"; sendCommand
+#sleep 0.1
+
+command="bossbar set minecraft:pregen value 100"; sendCommand
+#sleep 0.1
+
+command="bossbar set minecraft:pregen value 99"; sendCommand
+#sleep 0.1
+
+command="bossbar set minecraft:pregen value 61"; sendCommand
+#sleep 0.1
+
+command="bossbar set minecraft:pregen value 100"; sendCommand
+#sleep 0.1
+
+command="bossbar set minecraft:pregen value 91"; sendCommand
+#sleep 0.1
+
+#sleep 0.58
+
+command="bossbar set minecraft:pregen value 81"; sendCommand
+#sleep 0.1
+
+command="bossbar set minecraft:pregen value 79"; sendCommand 
+#sleep 0.1
+
+command="bossbar set minecraft:pregen value 1"; sendCommand
+#sleep 0.1
+
+command="bossbar set minecraft:pregen value 90"; sendCommand
+#sleep 0.1
+
+command="bossbar set minecraft:pregen value 98"; sendCommand
+
+#sleep 1.1
+
+command="bossbar set minecraft:pregen value 85"; sendCommand 
+
+command="bossbar set minecraft:pregen value 86"; sendCommand 
+
+command="bossbar set minecraft:pregen value 97"; sendCommand 
+
+command="bossbar set minecraft:pregen value 88"; sendCommand 
+
+command="bossbar set minecraft:pregen value 91"; sendCommand 
+
+command="bossbar set minecraft:pregen value 94"; sendCommand 
+
+command="bossbar set minecraft:pregen value 81"; sendCommand
+#sleep 0.2 
+
+command="bossbar set minecraft:pregen value 70"; sendCommand 
+
+command="bossbar set minecraft:pregen value 68"; sendCommand 
+
+command="bossbar set minecraft:pregen value 50"; sendCommand
+command="bossbar set minecraft:pregen value 3"; sendCommand
+command="bossbar set minecraft:pregen value 0"; sendCommand
+
+command="bossbar set minecraft:pregen value 91"; sendCommand
+
+command="bossbar set minecraft:pregen value 100"; sendCommand
+done
+}
+
+hardmode(){
+echo "[INFO] Started Hardmode module"
+	function hardmodeDisable(){
+	# run commands on disable
+	echo "Disabling hardmode..."
+	sleep 3
+	rm .hardmode
+	command="bossbar set minecraft:hardmode visible false"; sendCommand
+	command="weather clear"; sendCommand
+	command="gamerule naturalRegeneration true"; sendCommand
+	command="scoreboard objectives setdisplay list Display2"; sendCommand
+	command="datapack enable \"file/multiplayer sleep v1.0.1.zip\""; sendCommand
+	}
+
+	function hardmodeEnable(){
+	# run commands on enable
+touch .hardmode
+	command="bossbar set minecraft:hardmode players @a"; sendCommand
+command="bossbar set minecraft:hardmode visible true"; sendCommand
+#command="bossbar set minecraft:hardmode value 600"; sendCommand
+command="bossbar set minecraft:hardmode name \"Hardmode is beginning...\""; sendCommand
+command="effect give @a minecraft:nausea 6 1"; sendCommand
+command="bossbar set minecraft:hardmode value 0"; sendCommand
+sleep 3
+command="bossbar set minecraft:hardmode name \"Hardmode will last for an hour.\""; sendCommand
+sleep 6
+command="bossbar set minecraft:hardmode name \"During this hour, the game may be harder.\""; sendCommand
+sleep 6
+command="bossbar set minecraft:hardmode name \"Good luck!\""; sendCommand
+sleep 3
+command="bossbar set minecraft:hardmode name \"\""; sendCommand
+# execute cool stuff
+echo "executing cool stuff lel"
+# command=""; sendCommand
+command="weather thunder"; sendCommand
+command="gamerule naturalRegeneration false"; sendCommand
+command="datapack disable \"file/multiplayer sleep v1.0.1.zip\""; sendCommand
+command="playsound minecraft:ambient.cave master @a 0 0 0 100000000"; sendCommand
+command="playsound minecraft:ambient.cave master @a 0 0 0 100000000"; sendCommand
+#command="playsound minecraft:ambient.cave master @a 0 0 0 1000000000"; sendCommand
+command="scoreboard objectives setdisplay list health"; sendCommand
+# end cool stuff exec
+sleep 600
+        command="bossbar set minecraft:hardmode players @a"; sendCommand
+command="bossbar set minecraft:hardmode value 1"; sendCommand
+sleep 600
+command="weather thunder"; sendCommand
+        command="bossbar set minecraft:hardmode players @a"; sendCommand
+command="bossbar set minecraft:hardmode value 2"; sendCommand
+sleep 600
+command="weather rain"; sendCommand
+        command="bossbar set minecraft:hardmode players @a"; sendCommand
+command="bossbar set minecraft:hardmode value 3"; sendCommand
+sleep 600
+command="weather clear"; sendCommand
+        command="bossbar set minecraft:hardmode players @a"; sendCommand
+command="bossbar set minecraft:hardmode value 4"; sendCommand
+sleep 600
+command="weather clear"; sendCommand
+        command="bossbar set minecraft:hardmode players @a"; sendCommand
+command="bossbar set minecraft:hardmode value 5"; sendCommand
+sleep 600
+command="weather thunder"; sendCommand
+        command="bossbar set minecraft:hardmode players @a"; sendCommand
+command="bossbar set minecraft:hardmode value 6"; sendCommand
+command="bossbar set minecraft:hardmode name \"Hardmode is over.\""; sendCommand
+command="playsound minecraft:ambient.cave master @a 0 0 0 1000000000"; sendCommand
+	hardmodeDisable;
+
+	}
+
+# UNCOMMENT ONLY FOR TESTING
+#hardmodeEnable
+#hardmodeDisable
+# main loop. we wait, randomize, and if there's a match, enable hardmode.
+# we also put in some kind of lock.
+while true; do
+# check lock file before doing anything
+if [ -f ".hardmode" ]; then
+echo "Hardmode is active <hardmode>"
+echo "Disabling it now."
+hardmodeDisable;
+
+else
+
+echo "Hardmode is not active, roll dice."
+dice=$(shuf -i 1-128 -n 1 --random-source=/dev/urandom);
+	if [ "$dice" -eq "1" ]; then
+	echo "Dice landed on 1, enable hardmode"
+	# lock file
+	echo "1" > .hardmode
+	hardmodeEnable;
+	else
+	echo "Roll didn't land a 1."
+	echo "Keep going."
+	fi
+fi
+# s in an h
+sleep 3600
+done
+
+}
+
+newplayerd(){
+inotifywait -m ../runtime/"Mineland v1"/playerdata -e create -e moved_to |
+    while read dir action file; do
+        echo "The file '$file' appeared in directory '$dir' via '$action'"
+        # do something with the file
+    done
+
+}
+
+nolag(){
+	# run the antilag
+	touch /dev/shm/.nolag
+	while true; do
+	sleep 5
+	chmod 777 /dev/shm/.nolag 2>/dev/null
+	if [ -f /dev/shm/.nolag ]; then
+	command="function nolag:a"
+	sendCommand
+#	command="gamerule maxEntityCramming 6"
+#	sendCommand
+	fi
+	done
+	
+}

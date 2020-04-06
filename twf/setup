@@ -1,0 +1,20 @@
+#!/bin/bash
+set -a
+
+packidAppend="snap"
+packid="snap"
+pack="Lastsnap v2"
+fpid="snapServer"
+longPackID="snapServer"
+shortPackID="snap"
+lookFor=snapServer/runtime
+jarname="server.jar"
+javainstance="/home/mcs/snapServer/jvm/current/bin/java"
+ram="3330" # in Ms
+
+# set up openj9
+nurse_min=$(($ram * 6 / 10))
+nurse_max=$(($ram * 8 / 10))
+
+executable="firejail $javainstance -Xmx${ram}M -Xms${ram}M -Xmns${nurse_min}M -Xmnx${nurse_max}M -Xdisablejavadump -Xgc:concurrentScavenge -Xgc:dnssExpectedTimeRatioMaximum=3 -Xgc:scvNoAdaptiveTenure -Xdisableexplicitgc -jar /home/$user/$longPackID/runtime/$jarname nogui"
+echo "executed setup file"

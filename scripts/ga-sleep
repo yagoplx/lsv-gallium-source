@@ -1,0 +1,10 @@
+#!/bin/bash
+# Experiment with rtcwake. Basically schedules the server to wake up at a certain time.
+# Unused.
+# Part of yagoply's LSV-Gallium Utilities
+
+timeinsecs="14400"
+
+echo "going to sleep..."
+sleep 1
+sudo rtcwake -m mem -s $timeinsecs -v

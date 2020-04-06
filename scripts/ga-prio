@@ -1,0 +1,39 @@
+#!/bin/bash
+# Renices processes for high priority execution.
+# Causes issues with schedulers other than CFS
+# Part of yagoply's LSV-Gallium Utilities
+
+
+doRenice(){
+
+for nice in $check; do sudo renice -20 $nice; sudo ionice -c 1 -n 0 -p $nice; done
+
+}
+
+doRT(){
+
+for nice in $check; do sudo chrt -a -f -p 8 $nice ; chrt -p $nice; sudo ionice -c 1 -n 0 -p $nice; done
+
+}
+
+doRTMax(){
+
+for nice in $check; do sudo chrt -a -f -p 15 $nice ; chrt -p $nice; sudo ionice -c 1 -n 0 -p $nice; done
+
+}
+
+doNegRenice(){
+
+for nice in $check; do sudo renice 15 $nice; done
+
+}
+
+doIOSched(){
+echo bfq > /sys/block/sda/queue/scheduler
+echo bfq > /sys/block/sdb/queue/scheduler
+}
+
+check=$(pidof pihole-FTL); doRT
+check=$(pidof cloudflared); doRT
+check=$(pidof watchdog); doNegRenice
+check=$(pgrep -f "server.jar"); doRenice; doRT; 

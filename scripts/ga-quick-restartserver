@@ -1,0 +1,11 @@
+#!/bin/bash
+# Part of yagoply's LSV-Gallium Utilities
+# For some reason this doesn't work if put in the main script.
+
+set -a
+skip="true"
+command="kick @a Restarting the server. We'll be back in a few seconds."
+sudo -Eu mcs /home/mcs/snapServer/twf/watchdog -c
+command="stop"
+sudo -Eu mcs /home/mcs/snapServer/twf/watchdog -ul
+sudo -Eu mcs /home/mcs/snapServer/twf/watchdog -c

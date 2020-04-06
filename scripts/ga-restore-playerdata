@@ -1,0 +1,14 @@
+# wrapper for restic restore
+# restores player data
+# use an uuid lookup tool to find the file for your player
+# after use run ga-fixperms
+# Part of yagoply's LSV-Gallium Utilities
+
+# set password
+export RESTIC_PASSWORD=""
+
+echo "Listing snapshots"
+restic -r /mnt/linux_store_hdd/restic snapshots
+echo "Set SNAPSHOT_ID! Write it here:"
+read SNAPSHOT_ID
+restic -r /mnt/linux_store_hdd/restic restore $SNAPSHOT_ID --include /home/mcs/snapServer/runtime/"Mineland v1"/playerdata --target restored-playerdata

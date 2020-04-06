@@ -1,0 +1,31 @@
+#!/bin/bash
+
+# 15-min restart script
+set -a
+
+rm $lock 2>/dev/null
+export msgAppend='§9Server restarting in §315 minutes'; . watchdog -i
+sleep 600
+export msgAppend='§9Server restarting in §35 minutes'; . watchdog -i
+sleep 240
+export msgAppend='§6Server restarting in §31 minute'; . watchdog -i
+sleep 50
+export msgAppend='§cThe server is going down NOW!.'; . watchdog -i
+sleep 1
+./watchdog -ul
+
+export skip="true"
+skip="true"
+
+stoptheworld(){
+command="kick @a The server is restarting. This usually only takes a few seconds."
+sleep 0.3
+command="stop"
+./watchdog -c
+}
+
+stoptheworld
+
+rm .wdr 2>/dev/null
+
+exit 0

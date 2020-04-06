@@ -1,0 +1,7 @@
+#!/bin/bash
+sleep 8
+pulseaudio -k
+sleep .5
+pulseaudio & disown
+sleep .5
+pulseeffects --gapplication-service & disown
