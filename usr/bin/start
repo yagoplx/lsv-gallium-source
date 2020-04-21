@@ -1,0 +1,64 @@
+#!/bin/bash
+# Part of LSV-Gallium Utilities
+
+# ITMT workaround for linux-clear
+echo 0 > /proc/sys/kernel/sched_itmt_enabled
+
+# Hugepages setting method 2
+echo 2048 > /proc/sys/vm/nr_hugepages
+# UID for mcs
+echo 696 > /proc/sys/vm/hugetlb_shm_group
+
+# Use fast bfq scheduler for all drives
+echo bfq > /sys/block/sda/queue/scheduler
+echo bfq > /sys/block/sdb/queue/scheduler
+echo bfq > /sys/block/sdc/queue/scheduler
+
+# Load Ethernet driver
+modprobe r8169
+
+# Configure Ethernet
+ip link set netc0 mtu 1500
+ip link set lo mtu 9999
+systemctl start netctl@ppp0
+
+# WiFi country hack (enables 2.4GHz CH13)
+iw reg set GY
+
+# Start Gallium router's firewall and networking services
+systemctl start shorewall
+pihole restartdns
+systemctl start cloudflared-dns
+
+# Limit console spamming by dmesg
+dmesg -n 1
+
+# Disable any excessive power saving
+tlp ac
+nvidia-smi -pl 30
+
+# Enable persistence mode for GPGPU (performance)
+nvidia-smi -pm 1
+# Enable accounting mode for GPGPU (profiling)
+nvidia-smi -am 1
+
+# Cache in memory some stuff that crontab uses a lot.
+#cp /usr/bin/checkwifi /dev/shm/
+#cp /usr/bin/checkwifi2 /dev/shm/
+cp /usr/bin/ga-netrec /dev/shm/
+#cp /usr/bin/ga-prio /dev/shm
+cd /home/mcs/snapServer/twf
+
+# Start Lastsnap Vanilla
+sudo -u mcs /home/mcs/snapServer/twf/watchdog.sh ul
+sudo -u mcs /home/mcs/snapServer/twf/watchdog.sh -d
+
+# Enable (1) or disable (0) write cache
+hdparm -W 0 /dev/sda
+hdparm -W 0 /dev/sdb
+hdparm -W 0 /dev/sdc
+
+# Bufferbloat fixes
+debloat3
+
+exit 0

@@ -1,5 +1,0 @@
-#!/bin/bash
-# Grab the SSH logs for auditing.
-# Part of yagoply's LSV-Gallium Utilities
-
-journalctl --no-tail --no-pager | grep -i sshd | grep -v audit

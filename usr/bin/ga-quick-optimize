@@ -1,0 +1,64 @@
+#!/bin/bash
+#!/bin/bash
+# Part of LSV-Gallium Utilities
+# Non physical reboot script for lastsnap
+# import twf runtime
+
+asRoot="true"
+export asRoot="true"
+cd /home/mcs/snapServer/twf/
+. /home/mcs/snapServer/twf/watchdog import
+. /home/mcs/snapServer/twf/setup
+cd /home/mcs/snapServer/twf/
+
+set -a
+# phase 0: announce
+
+bossbarID="o"
+bossbarColor="purple"
+bossbarValue="0"
+bossbarName="Restarting the server in a moment."
+
+bossbarRoutines name; bossbarRoutines value; bossbarRoutines color
+bossbarRoutines visible true
+sleep 5
+bossbarName="This is quick and we'll be back in a few seconds."
+bossbarRoutines name; bossbarRoutines value; bossbarRoutines color
+bossbarRoutines visible true
+sleep 5
+
+bossbarName="Restarting..."
+bossbarColor="red"
+bossbarRoutines name; bossbarRoutines color;
+bossbarValue="0"
+bossbarRoutines value;
+sleep 1.0
+bossbarValue="1"
+bossbarRoutines value;
+sleep 1.0
+bossbarValue="2"
+bossbarRoutines value;
+sleep 1.0
+bossbarValue="3"
+bossbarRoutines value;
+sleep 1.0
+bossbarValue="4"
+bossbarRoutines value;
+sleep 1.0
+bossbarValue="5"
+bossbarRoutines value;
+sleep 1.0
+bossbarValue="6"
+bossbarRoutines value;
+sleep 1.0
+bossbarValue="0"
+bossbarColor="purple"
+bossbarRoutines value;
+bossbarRoutines name; bossbarRoutines color;
+sleep 2
+bossbarRoutines visible false
+cd /home/mcs/snapServer/twf/
+skip="true"
+export skip="true"
+
+sudo /usr/bin/ga-quick-restartserver

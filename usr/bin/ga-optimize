@@ -1,0 +1,106 @@
+#!/bin/bash
+#!/bin/bash
+# Part of LSV-Gallium Utilities
+# gallium minecraft optimization script
+# import twf runtime
+
+asRoot="true"
+export asRoot="true"
+cd /home/mcs/snapServer/twf/
+. /home/mcs/snapServer/twf/watchdog import
+. /home/mcs/snapServer/twf/setup
+cd /home/mcs/snapServer/twf/
+
+set -a
+# phase 0: announce
+
+bossbarID="o"
+bossbarColor="purple"
+bossbarValue="0"
+bossbarName="Starting automated maintenance."
+
+bossbarRoutines name; bossbarRoutines value; bossbarRoutines color
+bossbarRoutines visible true
+sleep 5
+#bossbarName="Lagspikes might happen during this."; bossbarRoutines name
+#sleep 1.5
+
+# phase 1: rebuild backup cache
+bossbarColor="blue"
+bossbarName="[1/5] Rebuilding backups cache"
+bossbarRoutines name; bossbarRoutines color;
+ga-backup -m -f
+bossbarValue="1"
+bossbarRoutines value;
+sleep 1
+
+# phase 2: clean up old backup data (purge)
+bossbarName="[2/5] Purging expired backup data"
+bossbarRoutines name;
+bossbarValue="2"
+bossbarRoutines value;
+ga-prune
+bossbarRoutines value;
+
+# phase 3: clean up swap
+bossbarName="[3/5] Forcing swap pages into RAM"
+bossbarRoutines name;
+bossbarValue="4"
+bossbarRoutines value;
+ga-memswap
+sleep 0.5
+
+# phase 4: clean up superfluous disk space
+bossbarName="[4/5] Cleaning up heavy leftovers"
+bossbarRoutines name;
+bossbarValue="5"
+bossbarRoutines value;
+skip=true
+export skip=true
+ga-cleanlogs
+rm /var/cache/pacman/pkg
+bossbarValue="6"
+bossbarRoutines value;
+sleep 0.5
+
+# phase 5: restart!
+bossbarName="[5/5] Restarting the server"
+bossbarColor="red"
+bossbarRoutines name; bossbarRoutines color;
+bossbarValue="0"
+bossbarRoutines value;
+sleep 1.0
+bossbarValue="1"
+bossbarRoutines value;
+sleep 1.0
+bossbarValue="2"
+bossbarRoutines value;
+sleep 1.0
+bossbarValue="3"
+bossbarRoutines value;
+sleep 1.0
+bossbarValue="4"
+bossbarRoutines value;
+sleep 1.0
+bossbarValue="5"
+bossbarRoutines value;
+sleep 1.0
+bossbarValue="6"
+bossbarRoutines value;
+sleep 1.0
+bossbarName="..."
+bossbarValue="0"
+bossbarColor="purple"
+bossbarRoutines value;
+bossbarRoutines name; bossbarRoutines color;
+cd /home/mcs/snapServer/twf/
+skip="true"
+export skip="true"
+sudo /usr/bin/ga-restartserver
+sleep 1
+bossbarRoutines visible false
+sleep 1
+sudo killall -u mcs java
+sleep 1
+sudo sync
+#sudo reboot --force --force

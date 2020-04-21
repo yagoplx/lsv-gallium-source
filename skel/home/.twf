@@ -1,0 +1,10 @@
+# Copy and modify to fit your minecraft installation of choice.
+
+function snap(){
+currentDir=$(pwd)
+cd /home/$USER/snapServer/twf/
+./watchdog $@
+cd $currentDir
+}
+alias watchdog-snap=snap
+alias twf-snap=snap

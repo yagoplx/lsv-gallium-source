@@ -1,0 +1,74 @@
+#!/bin/bash
+#!/bin/bash	
+# Part of LSV-Gallium Utilities
+#echo "WAIT..."
+#sleep 3
+
+# Beforehand this had no time limit and would lock up
+LANG=pt_BR.utf8
+ping -w 3 google.com -c 1 2> /dev/shm/netrec.1
+DNSCHECK=$(cat /dev/shm/netrec.1 | grep -i desconhecido | wc -l)
+ping -w 3 1.1.1.1 -c 1 2> /dev/shm/netrec.2
+INFCHECK=$(cat /dev/shm/netrec.2 | grep -i fora | wc -l)
+
+echo $DNSCHECK
+echo $INFCHECK
+sleep 1
+OVERRIDE="$1"
+
+	if [ "$OVERRIDE" == "-r" ]; then
+
+	DNSCHECK="1";
+	echo "Overriding...";
+
+	fi
+
+RESTARTDNSSERVICES()
+{
+    sudo systemctl restart pihole-FTL
+    sudo systemctl restart shorewall
+   # sudo systemctl iptables-openvpn
+    sudo systemctl restart cloudflared-dns
+    echo "Restarted DNS services..."
+}
+
+RESTARTNAT()
+{
+sudo iptables --table nat --append POSTROUTING --out-interface ppp0 -j MASQUERADE
+
+#iptables --table nat --append POSTROUTING --out-interface ppp0 -j MASQUERADE
+
+sudo iptables --append FORWARD --in-interface netw0 -j ACCEPT
+
+sudo iptables --append FORWARD --in-interface wlp4s0 -j ACCEPT
+
+sudo iptables --append FORWARD --in-interface netv0 -j ACCEPT
+
+
+echo "Restarted NAT."
+
+}
+
+if [ "$DNSCHECK" -gt 0 ]; then
+    RESTARTDNSSERVICES &
+
+sleep 3
+	RESTARTNAT &
+#    exit 0;
+else
+echo "OK."
+fi
+
+if [ "$INFCHECK" -gt 0 ]; then
+echo QUERYING INF
+#sudo ifconfig netc0 down
+echo QUERYING PPP
+	sudo systemctl restart netctl@ppp0
+  echo RESTARTED PPP
+sleep 1
+  RESTARTDNSSERVICES &
+sleep 1
+  RESTARTNAT &
+fi
+
+exit 0;

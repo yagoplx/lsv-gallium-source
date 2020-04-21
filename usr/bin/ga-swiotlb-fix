@@ -1,0 +1,29 @@
+#!/bin/bash
+#!/bin/bash
+# Part of LSV-Gallium Utilities
+set -a
+
+# Fix for swiotlb leak in drivers
+# Useful if you don't have iommu support
+
+# User to notify
+user="minecraft"
+# What to look for in kernel log
+lookfor="swiotlb buffer is full"
+# Time to wait in minutes if SWIOTLB full
+time="2"
+
+	look=$(sudo dmesg | grep -i "$lookfor" | wc -l)
+	echo "$look lines found."
+
+	doReboot(){
+		sync
+		sudo -E -u $user HOME=/home/$user bash --rcfile $HOME/.bashrc -c 'zenity --error --text="SWIOTLB buffer full. Rebooting in $time minute(s)."; echo "Sent."' 
+		shutdown -r -f $time "SWIOTLB full. Rebooting to resume normal operation!"
+	}
+
+	if [ "$look" -gt 0 ]; then
+		doReboot;
+	else
+		echo "All ok!"
+	fi

@@ -1,0 +1,11 @@
+#!/bin/bash
+
+# Part of LSV-Gallium Utilities
+# Set your password here!
+export RESTIC_PASSWORD=""
+
+echo "Listing snapshots"
+restic -r /mnt/linux_store_hdd/restic snapshots
+echo "Set SNAPSHOT_ID! Reading."
+read SNAPSHOT_ID
+restic -r /mnt/linux_store_hdd/restic restore $SNAPSHOT_ID --include /home/mcs/snapServer/runtime/"Mineland v1"/playerdata --target restored-playerdata

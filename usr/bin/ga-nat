@@ -1,0 +1,14 @@
+#!/bin/bash
+#!/bin/bash
+# Part of LSV-Gallium Utilities
+# NAT table. Probably not needed anymore...
+
+iptables --table nat --append POSTROUTING --out-interface ppp0 -j MASQUERADE
+
+iptables --table nat --append POSTROUTING --out-interface lo -j MASQUERADE
+
+iptables --append FORWARD --in-interface wlp4s0 -j ACCEPT
+
+iptables --append FORWARD --in-interface netw0 -j ACCEPT
+
+iptables --append FORWARD --in-interface netv0 -j ACCEPT

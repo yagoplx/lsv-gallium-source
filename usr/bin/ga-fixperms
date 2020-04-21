@@ -1,0 +1,3 @@
+#!/bin/bash
+# Quick script to fix permissions after backup restoration
+sudo chown mcs -Rv /home/mcs/snapServer/
