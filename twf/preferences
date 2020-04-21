@@ -1,8 +1,4 @@
 #!/bin/bash
-<<<<<<< HEAD
-=======
-
->>>>>>> 7aaebb5... Sync - 20w17a
 echo "loaded preferences file"
 set -a
 # Only change this if you know what you are doing.
