@@ -5,11 +5,12 @@
 #sleep 3
 
 # Beforehand this had no time limit and would lock up
-LANG=pt_BR.utf8
+# LANG not being C may be a problem
+LANG=C
 ping -w 3 google.com -c 1 2> /dev/shm/netrec.1
-DNSCHECK=$(cat /dev/shm/netrec.1 | grep -i desconhecido | wc -l)
+DNSCHECK=$(cat /dev/shm/netrec.1 | grep -i "Name or service not known" | wc -l)
 ping -w 3 1.1.1.1 -c 1 2> /dev/shm/netrec.2
-INFCHECK=$(cat /dev/shm/netrec.2 | grep -i fora | wc -l)
+INFCHECK=$(cat /dev/shm/netrec.2 | grep -i "Unreachable" | wc -l)
 
 echo $DNSCHECK
 echo $INFCHECK
