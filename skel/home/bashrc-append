@@ -1,0 +1,5 @@
+# Append this to the end of
+# your bashrc:
+# and add .twf to your home folder.
+
+. /home/$USER/.twf # Added by TWF

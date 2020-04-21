@@ -1,0 +1,11 @@
+#!/bin/bash
+#!/bin/bash
+# Part of LSV-Gallium Utilities
+set -a
+
+# Set your restic password here!
+RESTIC_PASSWORD=""
+
+# prune
+mainRepo="/mnt/linux_store_hdd/restic"
+restic -r $mainRepo prune

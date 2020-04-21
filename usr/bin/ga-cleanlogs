@@ -1,0 +1,10 @@
+#!/bin/bash
+set -a
+# Part of LSV-Gallium Utilities
+skip="true"
+dirnow=$(pwd)
+cd /home/mcs/snapServer/twf
+
+sudo -Eu mcs /home/mcs/snapServer/twf/watchdog cleanlogs
+cd $dirnow
+exit 0

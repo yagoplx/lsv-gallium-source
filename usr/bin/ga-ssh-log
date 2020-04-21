@@ -1,0 +1,5 @@
+#!/bin/bash
+#!/bin/bash
+# Part of LSV-Gallium Utilities
+# Checks for ssh logging
+journalctl --no-tail --no-pager | grep -i ssh | grep -v "ga-ssh-log"

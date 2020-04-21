@@ -1,0 +1,162 @@
+#!/bin/bash
+#!/bin/bash
+# Part of LSV-Gallium Utilities
+# run restic backups automatically
+echo "starting backups system"
+
+set -a
+
+# Set backups temporary directory
+backup_temp="/mnt/linux_store_hdd/restic"
+mkdir "$backup_temp"
+
+# Search for Gallium Utils and other server files
+if [ "$2" == "-f" ]; then
+find /usr/bin | grep 'ga-' > /files_to_backup
+find /etc/ | grep 'create_' >> /files_to_backup
+find /etc/shorewall >> /files_to_backup
+find /etc/netctl >> /files_to_backup
+fi
+
+# Set target
+backup_target="/home/mcs/snapServer/runtime"
+backup_target_2="/home/mcs/snapServer/twf"
+backup_target_3="/home/mcs/snapServer/assets"
+backup_target_4=""
+backup_target_5="--files-from /files_to_backup"
+
+backup_dropin="$backup_temp"
+
+# Set restic password and repos
+RESTIC_PASSWORD=""
+# Set your password here !
+
+mainRepo="/mnt/linux_store_hdd/restic"
+#altRepo="/mnt/linux_store/restic"
+LANG=EN
+
+trap_me(){
+msgAppend="§4Backup was cancelled by an admin."
+cdirhere=$(pwd)
+goto="/home/mcs/snapServer/twf"
+
+cd $goto
+sudo -Eu mcs /home/mcs/snapServer/twf/watchdog -i
+cd $cdirhere
+exit 1
+}
+
+trap 'trap_me' SIGINT
+trap 'trap_me' SIGTERM
+if [ "$1" == "-a" ]; then
+msgAppend="§9Doing a backup... §3($(date "+%F §3%R:%S"))"
+else
+	if [ "$2" == "-f" ]; then
+	msgAppend="§9Successfully rebuilt backups cache."
+	else
+	msgAppend="§9Admin called a §9backup §9for §9testing §9at §3($(date "+%F §3%R:%S"))"
+	fi
+fi
+cdirhere=$(pwd)
+goto="/home/mcs/snapServer/twf"
+
+cd $goto
+command="save-all"
+sudo -Eu mcs /home/mcs/snapServer/twf/watchdog -c
+sleep 5
+#command="save-all flush"
+sudo -Eu mcs /home/mcs/snapServer/twf/watchdog -i
+#sudo -Eu mcs /home/mcs/snapServer/twf/watchdog -c
+cd $cdirhere
+
+# Compression opts
+# Use level / Threads / Quiet
+compression_opts=""
+
+# debugging
+#rclone sync --retries 3 --low-level-retries 20 "$backup_temp/backup.tar" l:
+
+# Start measuring time
+SECONDS=0
+time_start=$SECONDS
+
+# Remove locks
+#restic unlock -r $altRepo
+restic unlock -r $mainRepo
+
+# Create a tarball with friendly Tar
+#echo "I am pooping a Tarball"
+#tar cf "$backup_temp/" "$backup_target"
+#echo "I am done pooping a Tarball"
+
+# Clean up Restic repos
+restic -r $mainRepo forget -l 50 --group-by=tag
+#restic -r $altRepo forget -l 2
+
+#restic -r $mainRepo prune
+#restic -r $altRepo prune
+
+# Backup data into Restic
+restic -r $mainRepo backup --files-from /files_to_backup "$backup_target" "$backup_target_2" "$backup_target_3" "$backup_target_4"
+#restic -r $altRepo backup "$backup_target" 
+
+# Finish up and log
+
+#rout=$(restic -r $backup_temp snapshots --last)
+#echo $rout
+#rout=$(echo $rout | sed 's/ID Time Host Tags//g')
+#echo $rout
+#rout=$(echo $rout | tr -d -)
+#echo $rout
+#rout=$(echo $rout | tail -n1 | sed -e 's/\s.*$//')
+#echo $rout
+time_end=$SECONDS
+
+function snapshot-ids {
+    # Return list of snapshot IDs
+
+    # Disable du
+    unset du
+
+    restic -r $backup_temp snapshots \
+        | head -n -2 \
+        | tail -n +3 \
+        | awk '/^[^ ]/ { print $1 }'
+}
+rout=$(snapshot-ids | tail -n1)
+
+time_diff=$((time_end - time_start))
+
+oldrout=$(cat /.lastbkp)
+if [ "$oldrout" == "$rout" ]; then
+	if [ "$rout" == "" ] || [ "$rout" == " " ]; then
+	msgAppend="§cBackup system is broken!"
+	else
+	# Did not detect a new backup. This can be bad.
+	msgAppend="§cBackup failed. Took §3$time_diff §9seconds."
+	fi
+elif [ "$rout" == "" ] || [ "$rout" == " " ]; then
+	msgAppend="§cFailed to create new backup. Took $time_diff seconds."
+else
+msgAppend="§9Saved backup #§3$rout §9in §3$time_diff§9 seconds."
+fi
+
+echo $rout > /.lastbkp
+
+
+cdirhere=$(pwd)
+goto="/home/mcs/snapServer/twf"
+
+cd $goto
+command="/-/ Finished backup with ID $rout in $time_diff seconds. /-/"
+sudo -Eu mcs /home/mcs/snapServer/twf/watchdog -i
+sudo -Eu mcs /home/mcs/snapServer/twf/watchdog -c
+cd $cdirhere
+
+if [ "$1" != "-a" ]; then
+restic -r $mainRepo snapshots
+fi
+
+# Backup data into the Cloud
+#rclone sync --retries 3 --low-level-retries 20 "$backup_temp/backup.tar" l:snapServer
+echo "exiting backups system"

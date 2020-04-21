@@ -1,0 +1,14 @@
+#!/bin/bash
+#!/bin/bash
+# Part of LSV-Gallium Utilities
+set -a
+skip="true"
+command="save-all flush"
+sudo -Eu mcs /home/mcs/snapServer/twf/watchdog -ul
+sudo -Eu mcs /home/mcs/snapServer/twf/watchdog -c
+sleep 11
+command="save-off"
+sudo -Eu mcs /home/mcs/snapServer/twf/watchdog -c
+sleep 1
+command="kick @a Restarting the server. We'll be back in a few seconds."
+sudo -Eu mcs /home/mcs/snapServer/twf/watchdog -c

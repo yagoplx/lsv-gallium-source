@@ -9,12 +9,26 @@ longPackID="snapServer"
 shortPackID="snap"
 lookFor=snapServer/runtime
 jarname="server.jar"
-javainstance="/home/mcs/snapServer/jvm/current/bin/java"
-ram="3330" # in Ms
+javainstance="/home/mcs/snapServer/jvm/14/bin/java"
+ram="4000" # in Ms
+user="mcs"
 
-# set up openj9
+# Set up hardware acceleration
+export ZLIB_DEFLATE_IMPL=1
+export ZLIB_INFLATE_IMPL=1
+export DFLTCC=1
+export CUDA_LIBRARY_PATH=/usr/lib/libcuda.so:$CUDA_LIBRARY_PATH
+export NVVM_LIBRARY_PATH=/opt/cuda/nvvm/lib/libnvvm.so:$NVVM_LIBRARY_PATH
+export LD_LIBRARY_PATH=/usr/lib/libcuda.so:$LD_LIBRARY_PATH             
+
+# Set up OpenJ9 Nursery for high performance GC
 nurse_min=$(($ram * 6 / 10))
 nurse_max=$(($ram * 8 / 10))
 
-executable="firejail $javainstance -Xmx${ram}M -Xms${ram}M -Xmns${nurse_min}M -Xmnx${nurse_max}M -Xdisablejavadump -Xgc:concurrentScavenge -Xgc:dnssExpectedTimeRatioMaximum=3 -Xgc:scvNoAdaptiveTenure -Xdisableexplicitgc -jar /home/$user/$longPackID/runtime/$jarname nogui"
+# CUDA GPGPU acceleration is enabled.
+# Hugepages usage is enabled. 
+executable="schedtool -B -e $javainstance -Xlp:codecache:pagesize=2M -Dcom.ibm.gpu.enable=all -Xlp:objectheap:pagesize=2M -Xmx${ram}M -Xms${ram}M -Xmns${nurse_min}M -Xmnx${nurse_max}M -Xdisablejavadump -Xgc:concurrentScavenge -Xgc:dnssExpectedTimeRatioMaximum=3 -Xdisableexplicitgc -Xjit:enableGPU={verbose} -Xcompressedrefs -jar /home/$user/$longPackID/runtime/$jarname nogui"
 echo "executed setup file"
+
+# Uncomment to be able to run the .jar from here
+#${executable}

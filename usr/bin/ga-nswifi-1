@@ -1,0 +1,179 @@
+#!/bin/bash
+#!/bin/bash
+# Part of LSV-Gallium Utilities
+# The new wifi router management script for the gallium server (2.4G only!)
+# Each "ga-nswifi-n" instance should have its own entry on the crontab.
+# Requires create_ap, haveged and hostapd
+# Call with -r to force restart wireless
+
+echo "NSWIFI: Starting..."
+set -a
+
+# Configurables - (default)
+# ID number of this NSWIFI instance, must be at least 1. (1) 
+wifi_n="1"
+# MTU. usually 1500. Change wifi_frag instead. (1500)
+wifi_mtu="1500"
+# RTS threshold, usually >1000 (1500)
+wifi_rts="864"
+# Fragmentation value for packets (1500)
+wifi_frag="864"
+# Wifi interface (wlp4s0)
+wifi_int="wlp4s0"
+# Wifi transmission power in dBm (20)
+wifi_power="30"
+# Wifi power save mode, on or off (on)
+wifi_ps="off"
+# Wifi country code (GY)
+wifi_crda="GY"
+# Wifi driver (8192ee)
+wifi_drv="8192ee"
+# Maximum speed of wifi device (300Mbit)
+qos_shaper_bw="46Mbit"
+# Maximum round trip time of wifi device (300ms)
+qos_rtt_ms="300ms"
+
+echo "NSWIFI: Listing configuration values..."
+echo "NSWIFI: n:$wifi_n mtu:$wifi_mtu rts:$wifi_rts frag:$wifi_frag int:$wifi_int rtt:$qos_rtt_ms"
+echo "NSWIFI: power:$wifi_power ps:$wifi_ps crda:$wifi_crda drv:$wifi_drv bw:$qos_shaper_bw"
+echo "NSWIFI: config: /etc/nswifi-$wifi_n"
+
+unset silence_create_ap
+unset silence_setopts
+
+# Uncomment the line below to silence create_ap
+#silence_create_ap=">/dev/null 2>&1"
+#silence_setopts=">/dev/null 2>&1"
+
+# Check files
+if [ ! -f "/etc/nswifi-$wifi_n" ]; then
+	echo "[3] NSWIFI: Found no external config file for nswifi-$wifi_n, quitting."
+	exit 3
+fi
+
+# Calculations
+unset phy
+#phy=$((wifi_n - 1))
+
+# Set functions
+
+exception_drv(){
+	echo "[1] NSWIFI: Driver not found, quitting."
+	exit 1
+}
+
+quit(){
+	# Quit on CTRL+C
+	echo "NSWIFI: Recieved SIGINT, quitting."
+	# Uncomment to halt wifi on quit
+	# wifiHalt &
+	echo "[0] NSWIFI: Force-Quit"
+	exit 0
+}
+
+wifiInsMod(){
+	echo "NSWIFI: wifiInsMod"
+	modprobe -v $wifi_drv
+}
+
+wifiRmMod(){
+	echo "NSWIFI: wifiRmMod"
+	modprobe -rv $wifi_drv
+}
+
+wifiSetOpts(){
+	echo 'NSWIFI: wifiSetOpts'
+	iw reg set $wifi_crda
+	iw phy$phy set frag $wifi_frag
+	iw phy$phy set rts $wifi_rts
+	iw phy$phy set power_save $wifi_ps
+	iw phy$phy set txpower fixed $wifi_power
+}
+
+wifiInit(){
+	echo 'NSWIFI: wifiInit'
+	wifiInsMod
+	create_ap --config /etc/nswifi-$wifi_n $silence_create_ap & disown
+}
+
+wifiHalt(){
+	echo 'NSWIFI: wifiHalt'
+	create_ap --stop $wifi_int $silence_create_ap & disown
+	ifconfig $wifi_int down
+	wifiRmMod
+}
+
+wifiDiag(){
+	netstat -i | grep $wifi_int | wc -l
+}
+
+wifiQoS(){
+	echo 'NSWIFI: wifiQoS'
+	# Make wifi suffer less from bufferbloat
+	modprobe sch_cake
+	modprobe act_mirred
+
+	tc qdisc del dev $wifi_int root
+	tc qdisc add dev $wifi_int root cake bandwidth $qos_shaper_bw rtt $qos_rtt_ms triple-isolate diffserv3 nat
+}
+
+wifiPost(){
+	# Start entropy generators
+	systemctl restart rngd
+	systemctl restart haveged
+	
+	# Fowarding
+	iptables --append FORWARD --in-interface $wifi_int -j ACCEPT
+	
+	# Bufferbloat mitigation
+	wifiQoS
+	
+	# Restart DNS services
+	systemctl restart pihole-FTL 
+	
+	# Force check network connections if ga-netrec available
+	ga-netrec >/dev/null 2>&1 & disown
+}
+
+wifiPostQuirks(){
+	# Solve wifi quirks
+	sleep 15
+	wifiQoS	
+}
+
+# Quit on CTRL+C
+trap quit SIGINT
+
+# Execute what NSWIFI does
+if [ "$1" == "-r" ]; then
+	wifiDown=1
+fi
+
+if [ "$(wifiDiag)" -lt 1 ]; then
+	wifiDown=1
+	echo "NSWIFI: $wifi_int is down."
+fi
+
+if [ "$wifiDown" == "1" ]; then
+		if [ ! "$EUID" -eq 0 ]; then
+   		 	echo "[4] NSWIFI: Not running as root. Quitting." 
+  		 	exit 4
+		fi
+	echo "NSWIFI: Bringing $wifi_int up..."
+	wifiInsMod || exception_drv
+	wifiHalt; sleep .2
+	wifiSetOpts $silence_setopts; sleep .2
+	wifiInit
+	wifiSetOpts $silence_setopts
+	wifiQoS
+	wifiPost
+	wifiPostQuirks & disown
+	
+	echo "[0] NSWIFI: Done setting up $wifi_int. Quitting."
+	unset wifiDown
+	exit 0
+else
+	echo "[0] NSWIFI: $wifi_int is already up. Quitting."
+	unset wifiDown
+	exit 0
+fi

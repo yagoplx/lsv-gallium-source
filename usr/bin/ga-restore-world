@@ -1,0 +1,16 @@
+#!/bin/bash
+#!/bin/bash
+# Part of LSV-Gallium Utilities
+ # Set your password here!
+ export RESTIC_PASSWORD=""
+
+ echo "Listing snapshots"
+ restic -r /mnt/linux_store_hdd/restic snapshots
+ echo "Set SNAPSHOT_ID! Reading."
+ read SNAPSHOT_ID
+
+echo "Restoring auxilliary files"
+restic -r /mnt/linux_store_hdd/restic restore $SNAPSHOT_ID --include /home/mcs/snapServer/runtime/ops.json --target restored-aux
+restic -r /mnt/linux_store_hdd/restic restore $SNAPSHOT_ID --include /home/mcs/snapServer/runtime/whitelist.json --target restored-aux
+echo "Restoring world"
+restic -r /mnt/linux_store_hdd/restic restore $SNAPSHOT_ID --include /home/mcs/snapServer/runtime/"Mineland v1" --target restored-world

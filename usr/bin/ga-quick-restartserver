@@ -1,0 +1,14 @@
+#!/bin/bash
+#!/bin/bash
+# Part of LSV-Gallium Utilities
+set -a
+skip="true"
+command="kick @a Restarting the server. We'll be back in a few seconds."
+
+sudo -Eu mcs /home/mcs/snapServer/twf/watchdog -c
+
+command="stop"
+
+sudo -Eu mcs /home/mcs/snapServer/twf/watchdog -ul
+
+sudo -Eu mcs /home/mcs/snapServer/twf/watchdog -c

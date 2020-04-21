@@ -1,0 +1,41 @@
+#!/bin/bash
+#!/bin/bash
+# Part of LSV-Gallium Utilities
+
+# Server now uses batch scheduling, but renicing it negatively might still be a good idea
+doRenice(){
+
+for nice in $check; do sudo renice -10 $nice; sudo ionice -c 1 -n 0 -p $nice; done
+
+}
+
+doRT(){
+
+for nice in $check; do sudo chrt -a -f -p 1 $nice ; chrt -p $nice; sudo ionice -c 1 -n 0 -p $nice; done
+
+}
+
+doRTMax(){
+
+# please never use this
+for nice in $check; do sudo chrt -a -f -p 15 $nice ; chrt -p $nice; sudo ionice -c 1 -n 0 -p $nice; done
+
+}
+
+doNegRenice(){
+
+for nice in $check; do sudo renice 15 $nice; done
+
+}
+
+doIOSched(){
+echo bfq > /sys/block/sda/queue/scheduler
+echo bfq > /sys/block/sdb/queue/scheduler
+}
+
+check=$(pidof pihole-FTL); doRT
+check=$(pidof cloudflared); doRT
+check=$(pidof watchdog); doNegRenice
+pgrep -f "server.jar"
+check=$(pgrep -f "server.jar"); doRenice; doRT; 
+#doIOSched

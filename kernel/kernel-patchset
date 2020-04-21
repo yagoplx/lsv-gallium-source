@@ -1,5 +1,3 @@
 linux-clear
 uksm
-wireguard
-linux-pf (BMQ)
 enable-additional-gcc-optimizations
