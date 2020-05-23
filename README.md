@@ -11,8 +11,6 @@ create_ap belongs to oblique (github.com/oblique), and is modified for pihole-FT
 **Description**  
 datapacks -> Datapacks used in the Lastsnap Vanilla server.
 
-kernel -> Contains a list of Linux patchsets used in the Gallium server's kernel, plus the kernel configuration used for all builds.
-
 usr/bin/-> Contains scripts used for management of the Lastsnap Vanilla server by the root user, usually through
 the Toasted Watchdog Framework, and other miscellaneous utilities for management of the Gallium server (the machine everything runs on)
 and the Gallium router (the subsystem that handles networking). WiFi-related solutions are included. Most of these are meant to be
